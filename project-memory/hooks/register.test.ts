@@ -59,6 +59,23 @@ test('rejected lines from the memory files reach the prompt with their file', as
   expect(await section($)).not.toContain('Nothing here')
 })
 
+test('a long paragraph gives only its rejected sentence', async ($, on) => {
+  const filler = 'We tuned the curve again and logged the numbers. '.repeat(30)
+  engine(on, { index: line, files: { 'collapsed.md': `- ${filler}The user rejected kill-fraction for pacing. ${filler}\n` } })
+  await start($)
+  const text = await section($)
+  expect(text).toContain('- The user rejected kill-fraction for pacing. (memory/collapsed.md)')
+  expect(text).not.toContain('We tuned the curve')
+})
+
+test('a rejected sentence over 300 bytes is cut at a word', async ($, on) => {
+  engine(on, { index: line, files: { 'long.md': `REJECTED: ${'a long reason '.repeat(40)}end.\n` } })
+  await start($)
+  const kept = (await section($)).split('\n').find(l => l.startsWith('- REJECTED')) ?? ''
+  expect(kept).toMatch(/ (a|long|reason)… \(memory\/long\.md\)$/)
+  expect(kept.length).toBeLessThan(330)
+})
+
 test('a memory file that cannot be read is named in the prompt', async ($, on) => {
   engine(on, { index: line, files: { 'redis.md': 'REJECTED: a Redis cache.\n' }, unreadable: ['locked.md'] })
   await start($)

@@ -8,7 +8,19 @@ const COMPACT_AT = 16 * 1024
 const REJECTED_MAX = 4 * 1024
 const REJECTED = /REJECTED|don't re-propose/i
 
+// A rejected sentence past this many bytes is cut; the file suffix points at the rest.
+const EXCERPT_MAX = 300
+
 const bytes = (s: string) => new TextEncoder().encode(s).length
+
+// Only the sentences that carry the marker, so one long paragraph can't fill REJECTED_MAX on its own.
+const excerpt = (line: string) => {
+  const text = line.trim().replace(/^(?:[-*]\s+|#+\s*)/, '').split(/(?<=[.!?])\s+/).filter(s => REJECTED.test(s)).join(' ')
+  if (bytes(text) <= EXCERPT_MAX) return text
+  let cut = text.slice(0, EXCERPT_MAX)
+  while (bytes(cut) > EXCERPT_MAX - 3) cut = cut.slice(0, -1)
+  return `${cut.replace(/\s+\S*$/, '')}…`
+}
 
 type Memory = { dir: string; index: string; rejected: string[]; unreadable: string[] }
 
@@ -48,7 +60,7 @@ export const register: Register = on => {
       const unreadable: string[] = []
       const rejected = (await Promise.all(files.map(async f => {
         const text = await $.fs.read(`${dir}/${f.name}`).catch(() => { unreadable.push(`memory/${f.name}`); return '' })
-        return text.split('\n').filter(l => REJECTED.test(l)).map(l => `- ${l.trim()} (memory/${f.name})`)
+        return text.split('\n').filter(l => REJECTED.test(l)).map(l => `- ${excerpt(l)} (memory/${f.name})`)
       }))).flat()
       loaded = { dir, index: found.parts[0]?.content ?? found.content, rejected, unreadable }
     }
