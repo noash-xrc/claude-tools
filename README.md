@@ -11,7 +11,7 @@ Claude Code mods I use every day. Each folder is one plugin, and all of them ins
 | [subagent-router](subagent-router/) | Search subagents run on Haiku and general-purpose ones on Sonnet, so the main model's tokens go to the work only it can do. |
 | [savings-meter](savings-meter/) | `/savings` shows what output-trimmer, subagent-router and auto-effort saved. |
 | [idle-compact](idle-compact/) | Compacts an idle session with a large context just before its prompt cache expires. |
-| [project-memory](project-memory/) | A Haiku agent reads the repo's `memory/` folder and returns only what the task needs. Another one compacts it. |
+| [project-memory](project-memory/) | The repo's `memory/` folder grouped in hubs, with notes that load when Claude touches their files and a pre-commit check. A Haiku agent keeps it in order. |
 
 ## Install
 
