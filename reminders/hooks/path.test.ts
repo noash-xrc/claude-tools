@@ -7,6 +7,7 @@ const fakeProject = (on: On, dirs: string[]) =>
 {
   const written: string[] = []
   on('fs.list', () => ({ value: dirs.map(name => ({ name, kind: 'dir' as const, size: 0, mtimeMs: 0, isLink: false })) }))
+  on('session.root', () => ({ value: '/proj' }) as never)
   on('fs.exists', () => ({ value: false }))
   on('fs.write', (_$, e) => (written.push(e.path.replace(/\\/g, '/')), { value: undefined }))
   on('clock.now', () => ({ value: new Date(2026, 9, 7, 12).getTime() }))
@@ -23,6 +24,15 @@ test('a project with no docs folder gets Docs/todos.md', async ($, on) =>
   await addOne($)
   expect(written).toHaveLength(1)
   expect(written[0]).toEndWith('/Docs/todos.md')
+})
+
+test('the file stays under the project root after a shell cd', async ($, on) =>
+{
+  const written = fakeProject(on, ['src'])
+  on('session.cwd', () => ({ value: '/proj/src/deep' }) as never)
+  await addOne($)
+  expect(written).toHaveLength(1)
+  expect(written[0]).toMatch(/^([A-Za-z]:)?\/proj\/Docs\/todos\.md$/)
 })
 
 test('a lowercase docs folder is used as it is spelled', async ($, on) =>

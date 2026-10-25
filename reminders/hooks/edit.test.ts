@@ -7,6 +7,7 @@ import { add, EMPTY, parseOpen } from './todos'
 const fakeDisk = (on: On, md: string) =>
 {
   const file = { md }
+  on('session.root', () => ({ value: '/proj' }) as never)
   on('fs.exists', () => ({ value: true }))
   on('fs.read', () => ({ value: file.md }))
   on('fs.write', (_$, e) => ((file.md = e.text), { value: undefined }))

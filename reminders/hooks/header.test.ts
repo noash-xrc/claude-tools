@@ -16,6 +16,7 @@ const PROPS = {
 // Docs/todos.md holds `md`, or is missing when `md` is undefined. The engine's own band is a stub.
 const fakeDisk = (on: On, md: string | undefined) =>
 {
+  on('session.root', () => ({ value: '/proj' }) as never)
   on('fs.exists', (_$, e) => ({ value: md !== undefined || !e.path.endsWith('todos.md') }))
   on('fs.read', () => ({ value: md ?? '' }))
   on('ui.render', ($, e) => $.ui.resolve(e).Text({ children: 'engine' }))
@@ -57,6 +58,7 @@ for (const surface of SURFACES)
 
   test(`another mod's drawing in the band stays, the line under it (${surface})`, async ($, on) =>
   {
+    on('session.root', () => ({ value: '/proj' }) as never)
     on('fs.exists', () => ({ value: true }))
     on('fs.read', () => ({ value: seeded() }))
     on('ui.render', ($, e) => $.ui.resolve(e).Text({ children: 'meter: 42% used' }))
@@ -78,6 +80,7 @@ for (const surface of SURFACES)
 test('/todos --header off turns the showHeader option off', async ($, on) =>
 {
   const set: unknown[] = []
+  on('session.root', () => ({ value: '/proj' }) as never)
   on('config.set', (_$, e) => (set.push([e.key, e.value]), { value: e.value }))
   const r = await $.command.run({ command: 'todos', args: '--header off' })
 

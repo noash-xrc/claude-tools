@@ -65,18 +65,25 @@ let showHeader = true
 // The reminders file for this project, found once per session.
 let where: Promise<string> | undefined
 
+// A project-relative path made absolute under the session's root. $.fs resolves a relative path against the
+// working directory, which a shell `cd` moves, so a relative Docs/todos.md would land in whatever folder that is.
+const inRoot = async ($: EngineInterface, p: string) =>
+  /^([a-z]:)?[\\/]/i.test(p) ? p : `${(await $.session.root()).replace(/\\/g, '/')}/${p}`
+
 // The `path` option, else docs/todos.md in an existing docs folder spelled any case, else Docs/todos.md.
 const detect = async ($: EngineInterface) =>
 {
   if (configured) return configured
-  const dirs = await $.fs.list().then(
+  const dirs = await $.fs.list(await inRoot($, '')).then(
     entries => entries.filter(x => x.kind === 'dir' && x.name.toLowerCase() === 'docs').map(x => x.name),
     () => [] as string[],
   )
-  for (const dir of dirs) if (await $.fs.exists(`${dir}/todos.md`)) return `${dir}/todos.md`
+  for (const dir of dirs) if (await $.fs.exists(await inRoot($, `${dir}/todos.md`))) return `${dir}/todos.md`
   return dirs.length ? `${dirs[0]}/todos.md` : PATH
 }
+// The path as Claude and the pane show it, relative to the project; diskPath is the one $.fs gets.
 const filePath = ($: EngineInterface) => (where ??= detect($))
+const diskPath = async ($: EngineInterface) => inRoot($, await filePath($))
 
 const getFolded = async ($: EngineInterface) =>
 {
@@ -259,13 +266,13 @@ const today = async ($: EngineInterface) =>
 
 const load = async ($: EngineInterface) =>
 {
-  const path = await filePath($)
+  const path = await diskPath($)
   return (await $.fs.exists(path)) ? $.fs.read(path) : EMPTY
 }
 
 const save = async ($: EngineInterface, md: string) =>
 {
-  await $.fs.write(await filePath($), md)
+  await $.fs.write(await diskPath($), md)
   $.ui.invalidate('ui.render')
 }
 
@@ -304,7 +311,7 @@ const explain = async ($: EngineInterface, t: Todo) =>
   explained.set(t.text, undefined)
   $.ui.invalidate('ui.render')
   await openPane($).catch(() => undefined)
-  const file = t.at && pointerFile(t.at)
+  const file = t.at && (await inRoot($, pointerFile(t.at)))
   const code = file && (await $.fs.exists(file)) ? await $.fs.read(file).catch(() => undefined) : undefined
   const r = await $.model.complete({
     model: 'haiku',
@@ -562,7 +569,7 @@ export const register: Register = (on, options) =>
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) =>
   {
     if (!showHeader || e.props.hasSurvey) return next(e)
-    const path = await filePath($)
+    const path = await diskPath($)
     const exists = await $.fs.exists(path)
     const open = exists ? parseOpen(await $.fs.read(path)) : []
     if (exists && !open.length) return next(e)
@@ -605,7 +612,7 @@ export const register: Register = (on, options) =>
     const blocking = open.filter(t => t.priority === 'P1').length
     const fold = await getFolded($)
     const missing = new Set<string>()
-    for (const t of open) if (t.at && !(await $.fs.exists(pointerFile(t.at)))) missing.add(t.text)
+    for (const t of open) if (t.at && !(await $.fs.exists(await inRoot($, pointerFile(t.at))))) missing.add(t.text)
     const has = (key: string) => e.props.isFocused && focused === key
     width = e.props.bodyColumns
 

@@ -5,6 +5,7 @@ import { expect, test } from 'claude-code/testing'
 const stubPrompt = (on: On) =>
 {
   const sent: string[] = []
+  on('session.root', () => ({ value: '/proj' }) as never)
   on('prompt.submit', (_$, e) => (sent.push(e.text), { text: e.text }))
   on('clock.after', () => ({ value: undefined }))
   return sent

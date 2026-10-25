@@ -5,6 +5,7 @@ import { expect, test } from 'claude-code/testing'
 const fakeCli = (on: On, answer: (argv: readonly string[]) => { exitCode: number; stdout: string }) =>
 {
   const ran: string[] = []
+  on('session.root', () => ({ value: '/proj' }) as never)
   on('process.run', (_$, e) =>
   {
     ran.push(e.argv.join(' '))

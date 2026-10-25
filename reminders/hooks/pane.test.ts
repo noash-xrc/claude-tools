@@ -20,6 +20,7 @@ const fakeDisk = (on: On, md: string, gone: string[] = [], code: Record<string, 
 {
   const file = { md }
   const ends = (path: string, end: string) => path.replace(/\\/g, '/').endsWith(end)
+  on('session.root', () => ({ value: '/proj' }) as never)
   on('fs.exists', (_$, e) => ({ value: !gone.some(g => ends(e.path, g)) }))
   on('fs.read', (_$, e) => ({ value: Object.entries(code).find(([end]) => ends(e.path, end))?.[1] ?? file.md }))
   on('fs.write', (_$, e) => ((file.md = e.text), { value: undefined }))
