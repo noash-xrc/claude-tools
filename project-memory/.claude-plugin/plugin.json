@@ -1,6 +1,6 @@
 {
   "name": "project-memory",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "A repo's memory/ folder, shared through git: notes grouped in hubs, file-tied notes that load on touch, a pre-commit check, and a Haiku agent that keeps it in order",
   "author": {
     "name": "Noash"
